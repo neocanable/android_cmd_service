@@ -1,5 +1,5 @@
 #include "util.h"
-#include "websocket_server.h"
+#include "cmd_server.h"
 
 
 
@@ -13,13 +13,14 @@ CmdServer* CmdServer::getInstance() {
 }
 
 int CmdServer::event_add_new_client(int fd) {
-  clientManager->addWebsocketClient(mClientfd);
+  // clientManager->addWebsocketClient(mClientfd);
   return 0;
 }
 
 int CmdServer::event_remove_client(int fd) {
-  clientManager->removeWebsocketClient(fd);
-  clientManager->disconnectWebsocket(fd);
+  // clientManager->removeWebsocketClient(fd);
+  // clientManager->disconnectWebsocket(fd);
+  close(fd);
   return 0;
 }
 
@@ -37,6 +38,7 @@ void CmdServer::handle_client_data(int fd) {
   }
 
   if (bufflen > 0) {
-    client->process(buffer, bufflen);
+    // TODO: fix data
+    tcp_debug_print("get socket input is: %s", buffer);
   }
 }

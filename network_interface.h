@@ -4,6 +4,7 @@
 
 #include "util.h"
 
+#include <sys/un.h>
 #include <sys/epoll.h>
 
 class NetworkInterface {
@@ -34,8 +35,8 @@ class NetworkInterface {
     int mClientfd;
     int mEventfd; // epoll server fd
 
-    struct sockaddr_in mServerAddr;
-    struct sockaddr_in mClientAddr;
+    struct sockaddr_un mServerAddr;
+    struct sockaddr_un mClientAddr;
 
     struct epoll_event mEvent;
     struct epoll_event mEvents[MAX_CLIENT_SIZE]; // epoll events

@@ -1,4 +1,5 @@
 #include "network_interface.h"
+#include <string>
 
 
 NetworkInterface::NetworkInterface() {
@@ -15,8 +16,8 @@ NetworkInterface* NetworkInterface::getInstance() {
 }
 
 int NetworkInterface::start() {
-  // mServerfd = socket(AF_INET, SOCK_STREAM, 0);
-  mServerfd = socket(AF_UNIX, SOCK_STREAM, 0);
+  mServerfd = socket(AF_LOCAL, SOCK_STREAM, 0);
+  
   if ( mServerfd <= 0 ) {
     tcp_debug_print("create server socket error");
     return SERVER_ERROR;
@@ -24,46 +25,31 @@ int NetworkInterface::start() {
     tcp_debug_print("create server socket: %d", mServerfd);
   }
 
-  memset(&mServerAddr, 0, sizeof(mServerAddr));
-  mServerAddr.sin_family      = AF_INET;
-  mServerAddr.sin_addr.s_addr = INADDR_ANY;
-  mServerAddr.sin_port        = htons(port);
+  memset(&mServerAddr, 0, sizeof(sockaddr_un));
+  mServerAddr.sun_family = AF_LOCAL;
 
-  mServerAddr.sun_family = AF_UNIX;
-  if (*socket_path == '\0') {
-    *addr.sun_path = '\0';
-    strncpy(addr.sun_path+1, socket_path+1, sizeof(addr.sun_path)-2);
+  // strncpy(mServerAddr.sun_path, UNIX_SOCKET_NAME, sizeof(mServerAddr.sun_path) - 1);
+  // strcpy(mServerAddr.sun_path, "#sb.cmdservice.server");
+  // mServerAddr.sun_path[0] = '\0';
+
+  mServerAddr.sun_path[0] = '\0';
+  strncpy(mServerAddr.sun_path+1, UNIX_SOCKET_NAME, strlen(UNIX_SOCKET_NAME));
+
+  // unlink("\0sb.cmdservice.server");
+
+  if (Util::set_socket_nonblocking(mServerfd) == -1) {
+    tcp_debug_print("set nonblock error");
   } else {
-    strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path)-1);
-    unlink(socket_path);
+    tcp_debug_print("set nonblock success");
   }
 
-
-  if ( bind(mServerfd, (struct sockaddr *)&mServerAddr, sizeof(mServerAddr)) < 0 ) {
-    tcp_debug_print("bind socket error: %d", port);
-    tcp_debug_print("bind error is: %d", errno);
+  if ( bind(mServerfd, (const struct sockaddr *) &mServerAddr, sizeof(struct sockaddr_un)) < 0 ) {
+    // tcp_debug_print("bind socket path is: %s", socketStr.c_str());
+    tcp_debug_print("bind socket success");
     return SERVER_ERROR;
   } else {
     tcp_debug_print("bind socket success");
   }
-
-  // int opt = 1;
-  // if( setsockopt(mServerfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) < 0 ) {
-  //   tcp_debug_print("socket opt error");
-  //   return SERVER_ERROR;
-  // }
-
-  int on = 1;
-	if((setsockopt(mServerfd, SOL_SOCKET, SO_REUSEADDR,&on, sizeof(on))) < 0 ) {
-		tcp_debug_print("setsockopt failed");
-    return SERVER_ERROR;
-	}
-
-  // int yes = 1;
-  // if( setsockopt(mServerfd, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(int)) < 0 ) {
-  //   tcp_debug_print("socket opt error");
-  //   return SERVER_ERROR;
-  // }
 
   if( listen(mServerfd, 5) < 0) {
     tcp_debug_print("listen socket error");
@@ -77,7 +63,7 @@ int NetworkInterface::start() {
 }
 
 int NetworkInterface::listen_server_event() {
-  mEventfd = epoll_create1(0);
+  mEventfd = epoll_create(8);
   if ( mEventfd < 0 ) {
     tcp_debug_print("init epoll server error");
     return SERVER_ERROR;
@@ -98,14 +84,20 @@ int NetworkInterface::listen_server_event() {
 }
 
 int NetworkInterface::event_loop() {
+  
   listen_server_event();
   int eventSize;
   int i;
   while ( 1 ) {
+    // tcp_debug_print("1. begin enter event_loop");
+
     eventSize = epoll_wait(mEventfd, mEvents, sizeof(mEvent), -1);
+    tcp_debug_print("2. begin enter event_loop");
+
     if (eventSize == -1) {
       tcp_debug_print("epoll wait no event");
-      return SERVER_ERROR;
+      // return SERVER_ERROR;
+      continue;
     } else if (eventSize == 0) {
       tcp_debug_print("no socket read for read");
       continue;
