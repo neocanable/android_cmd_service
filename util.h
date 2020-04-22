@@ -13,21 +13,24 @@
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <time.h>
+#include <android/log.h>
 
 
 
-#define _DEBUG 1
+#define _DEBUG 0
 
 #define SERVER_ERROR -1
 
 #define MAX_CLIENT_SIZE 1024
 
-#define UNIX_SOCKET_NAME "sb.cmdservice.server"
+#define UNIX_SOCKET_NAME "my.cmd.service"
 
-#define tcp_debug_print(FMT, ARGS...) do { \
-    if ( _DEBUG ) \
-        fprintf(stdout, "[%s %s] %s %s:%d " FMT "\n", __DATE__, __TIME__, __FILE__, __FUNCTION__, __LINE__, ## ARGS); \
-    } while (0)
+#define  LOG_TAG "CmdService"
+
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
+#define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 
 
 typedef int SOCKET;

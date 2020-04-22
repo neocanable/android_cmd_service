@@ -24,7 +24,7 @@ class NetworkInterface {
     NetworkInterface();
     NetworkInterface(NetworkInterface const&);
     NetworkInterface& operator=(NetworkInterface const&);
-    ~NetworkInterface();
+    virtual ~NetworkInterface() {};
 
   private:
     int listen_server_event();
